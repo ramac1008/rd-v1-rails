@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rd-v1-rails
+  namespace: default
+  labels:
+    app: rd-v1-rails
+spec:
+  ports:
+    - port: 3000
+      protocol: TCP
+      name: rd-v1-lb
+  selector:
+    app: rd-v1-rails
+    tier: backend
+  type: LoadBalancer
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: rd-v1-rails-configmap
+  namespace: default
+data:
+  COUNTRY: 'ca'
+  SYSTEM_ENV: 'http://192.168.1.80'
+  HOST_URI: 'http://192.168.1.80'
+  REDIS_URL: 'redis://192.168.1.80:6379/0'
+
+  PHAXIO_API_KEY: 'd20oabnltfkaz1o6fjnbvbyye7yyzsrhtljjb0gy'
+  PHAXIO_API_SECRET: 'woxeom4ctxu69yly8tj3qsrxyr34hwirab10ibd6'
+  PAYLOAD_SECRET: 'hola123'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rd-v1-rails-deployment
+  namespace: default
+  labels:
+    app: rd-v1-rails
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rd-v1-rails
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: rd-v1-rails
+        tier: backend
+    spec: # Pod spec
+      containers:
+        - name: rd-v1-rails-container
+          image: condorl/rd-v1-rails:1.0
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: rd-v1-rails-configmap
